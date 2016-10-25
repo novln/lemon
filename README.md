@@ -10,7 +10,72 @@ An engine to manage your components lifecycle.
 
 [![Lemon][lemon-img]][lemon-url]
 
+## Introduction
+
+Lemon is an engine that manage your components lifecycle using a startup and shutdown mechanism.
+
+It will start every registered hook _(or daemon, service, etc...)_ and block until it receives a signal (**SIGINT**, **SIGTERM** and **SIGQUIT** for example) or when the parent context _(if provided)_ is terminated...
+
+> **NOTE:**  startup and shutdown procedure will be executed in separated goroutine: so be very carreful with any race conditions or deadlocks.
+
 ## Example
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/november-eleven/lemon"
+)
+
+type Ping struct {
+	kill chan struct{}
+}
+
+func (p *Ping) Start() error {
+
+	if p.kill == nil {
+		p.kill = make(chan struct{}, 1)
+	}
+
+	for {
+		select {
+		case <-p.kill:
+			return nil
+		case <-time.After(2 * time.Second):
+			fmt.Println("Ping")
+		}
+	}
+}
+
+func (p *Ping) Stop() error {
+	if p.kill != nil {
+		p.kill <- struct{}{}
+	}
+	return nil
+}
+
+func main() {
+
+	t := 5 * time.Second
+	e, err := lemon.New(lemon.Timeout(t), lemon.Logger(func(err error) {
+		fmt.Fprintln(os.Stderr, err)
+	}))
+
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(255)
+	}
+
+	e.Register(&Ping{})
+	e.Start()
+
+}
+
+```
 
 ## License
 
