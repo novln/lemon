@@ -16,7 +16,7 @@ Lemon is an engine that manage your components lifecycle using a startup and shu
 
 It will start every registered hook _(or daemon, service, etc...)_ and block until it receives a signal (**SIGINT**, **SIGTERM** and **SIGQUIT** for example) or when the parent context _(if provided)_ is terminated...
 
-> **NOTE:**  startup and shutdown procedure will be executed in separated goroutine: so be very carreful with any race conditions or deadlocks.
+> **NOTE:** startup and shutdown procedure will be executed in separated goroutine: so be very carreful with any race conditions or deadlocks.
 
 ## Example
 
@@ -76,6 +76,13 @@ func main() {
 }
 
 ```
+
+## Versioning or Vendoring
+
+Expect compatibility break from `master` branch.
+Copy and/or Fork are highly recommended.
+
+> **NOTE:** semver tags or branches could be provided, if needed.
 
 ## License
 
