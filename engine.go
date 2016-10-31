@@ -40,6 +40,8 @@ type Engine struct {
 	beforeShutdown func()
 	afterShutdown  func()
 	logger         func(error)
+	mutex          sync.Mutex
+	cause          error
 }
 
 // New creates a new engine with given options.
@@ -81,14 +83,19 @@ func (e *Engine) launch(h Hook) {
 		// It could either be from engine's context or during Hook startup if an error has occurred.
 		// NOTE: If HookRuntime returns an error, we have to shutdown every Hook...
 		if err := runtime.WaitForEvent(e.ctx, h); err != nil {
+			e.mutex.Lock()
 			e.log(err)
 			e.cancel()
+			e.cause = err
+			e.mutex.Unlock()
 		}
 
 		// Wait for hook to gracefully shutdown, or kill it after timeout.
 		// This is handled by HookRuntime.
 		for _, err := range runtime.Shutdown(e.timeout) {
+			e.mutex.Lock()
 			e.log(err)
+			e.mutex.Unlock()
 		}
 
 	}()
@@ -121,7 +128,7 @@ func (e *Engine) init() {
 
 // Start will launch the engine and start registered hooks.
 // It will block until every hooks has shutdown, gracefully or with force...
-func (e *Engine) Start() {
+func (e *Engine) Start() error {
 
 	e.init()
 
@@ -136,5 +143,10 @@ func (e *Engine) Start() {
 	if e.afterShutdown != nil {
 		e.afterShutdown()
 	}
+
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	return e.cause
 
 }
