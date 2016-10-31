@@ -3,7 +3,6 @@ package lemon
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 )
@@ -11,10 +10,7 @@ import (
 func TestLoggerErrOnStart(t *testing.T) {
 
 	failures := []error{}
-	sync := &sync.Mutex{}
 	handler := func(err error) {
-		sync.Lock()
-		defer sync.Unlock()
 		failures = append(failures, err)
 	}
 
@@ -32,10 +28,17 @@ func TestLoggerErrOnStart(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err == nil {
+			t.Error("An error was expected")
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
+
+		if err != h.startError {
+			t.Fatalf("Unexpected failure: %+v", err)
+		}
 
 		if len(failures) != 1 {
 			t.Fatalf("Unexpected failures: %+v", failures)
@@ -61,10 +64,7 @@ func TestLoggerErrOnStart(t *testing.T) {
 func TestLoggerErrOnStop(t *testing.T) {
 
 	failures := []error{}
-	sync := &sync.Mutex{}
 	handler := func(err error) {
-		sync.Lock()
-		defer sync.Unlock()
 		failures = append(failures, err)
 	}
 
@@ -86,7 +86,10 @@ func TestLoggerErrOnStop(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
@@ -116,10 +119,7 @@ func TestLoggerErrOnStop(t *testing.T) {
 func TestLoggerErrOnStartAndStop(t *testing.T) {
 
 	failures := []error{}
-	sync := &sync.Mutex{}
 	handler := func(err error) {
-		sync.Lock()
-		defer sync.Unlock()
 		failures = append(failures, err)
 	}
 
@@ -131,6 +131,10 @@ func TestLoggerErrOnStartAndStop(t *testing.T) {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
 
+	// There is a trick with this testHook. Because h.kill is defined, h.startError will only be returned
+	// when Stop() is called. So, this error will not be returned (which is the expected behavior)
+	// by the engine's Start() method. Nonetheless, this error be forwarded on the error's logger,
+	// along with the stop error.
 	h := &testHook{}
 	h.kill = make(chan struct{}, 1)
 	h.startError = errors.New("An error has occurred: foobar")
@@ -142,7 +146,10 @@ func TestLoggerErrOnStartAndStop(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Error("An error wasn't expected")
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()

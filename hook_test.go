@@ -27,7 +27,10 @@ func TestHookLifecycle(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
@@ -84,7 +87,10 @@ func TestBeforeShutdownHookWithCancelContext(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
@@ -137,7 +143,10 @@ func TestAfterShutdownHookWithCancelContext(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
@@ -193,7 +202,10 @@ func TestBeforeShutdownHookWithSignal(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
@@ -247,7 +259,10 @@ func TestAfterShutdownHookWithSignal(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()

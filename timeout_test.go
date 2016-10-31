@@ -70,7 +70,9 @@ func TestTimeoutWithBlockingStart(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
 
 		delta := time.Since(t0)
 
@@ -136,7 +138,9 @@ func TestTimeoutWithBlockingStop(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
 
 		delta := time.Since(t0)
 

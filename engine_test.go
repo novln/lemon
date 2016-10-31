@@ -42,7 +42,9 @@ func TestShutdownWithSignal(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
 
 		delta := time.Since(t0)
 		latency := (delta - kill)
@@ -100,7 +102,9 @@ func TestShutdownWithCancelContext(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
 
 		delta := time.Since(t0)
 		latency := (delta - kill)
@@ -156,7 +160,9 @@ func TestShutdownWithHookError(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err = e.Start(); err == nil {
+			t.Error("An error was expected")
+		}
 
 		delta := time.Since(t0)
 
@@ -213,7 +219,9 @@ func TestShutdownWithoutNew(t *testing.T) {
 	go func() {
 
 		t0 := time.Now()
-		e.Start()
+		if err := e.Start(); err != nil {
+			t.Fatalf("An error wasn't expected: %s", err)
+		}
 
 		delta := time.Since(t0)
 		latency := (delta - kill)

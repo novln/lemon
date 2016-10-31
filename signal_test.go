@@ -69,7 +69,10 @@ func TestShutdownWithMultipleSignal(t *testing.T) {
 
 	go func() {
 
-		e.Start()
+		if err = e.Start(); err != nil {
+			t.Errorf("An error wasn't expected: %s", err)
+		}
+
 		defer func() {
 			d <- struct{}{}
 		}()
