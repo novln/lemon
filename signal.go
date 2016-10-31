@@ -11,29 +11,27 @@ var (
 	Signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT}
 )
 
-func (e *Engine) onSignalNotification() {
-
-	if e.interrupt == nil {
-		e.interrupt = make(chan os.Signal, 1)
+// waitInterrupt will block until a shutdown notification is received.
+func (e *Engine) waitInterrupt() {
+	select {
+	case <-e.interrupt:
+	case <-e.parent.Done():
 	}
+}
+
+// waitShutdownNotification will forward a shutdown notification on engine when a stop signal is received or
+// when the parent context is terminated.
+func (e *Engine) waitShutdownNotification() {
 
 	signal.Notify(e.interrupt, e.signals...)
 
-	for range e.interrupt {
+	e.waitInterrupt()
 
-		if e.interrupted {
-			return
-		}
-
-		e.interrupted = true
-
-		if e.beforeShutdown != nil {
-			e.beforeShutdown()
-		}
-
-		e.cancel()
-
+	if e.beforeShutdown != nil {
+		e.beforeShutdown()
 	}
+
+	e.cancel()
 
 }
 
@@ -41,6 +39,7 @@ func (e *Engine) onSignalNotification() {
 func AddSignal(signal os.Signal) Option {
 	return wrapOption(func(e *Engine) error {
 
+		// Avoid repeated signal value.
 		for _, s := range e.signals {
 			if s == signal {
 				return nil

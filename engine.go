@@ -29,7 +29,6 @@ import (
 // However, if a hook fails to stop before timeout, the underlying goroutine will be destroyed...
 //
 type Engine struct {
-	interrupted    bool
 	interrupt      chan os.Signal
 	timeout        time.Duration
 	hooks          []Hook
@@ -120,8 +119,7 @@ func (e *Engine) onContextNotification() {
 // It will block until every hooks has shutdown, gracefully or with force...
 func (e *Engine) Start() {
 
-	go e.onSignalNotification()
-	go e.onContextNotification()
+	go e.waitShutdownNotification()
 
 	for _, h := range e.hooks {
 		e.launch(h)
