@@ -54,16 +54,9 @@ func New(options ...Option) (*Engine, error) {
 // Options can change the timeout, register a signal, execute a pre-hook callback and many other behaviors.
 func NewWithContext(parent context.Context, options ...Option) (*Engine, error) {
 
-	ctx, cancel := context.WithCancel(context.Background())
-
 	e := &Engine{}
-
-	e.wait = sync.WaitGroup{}
 	e.parent = parent
-	e.ctx = ctx
-	e.cancel = cancel
-	e.timeout = DefaultTimeout
-	e.signals = Signals
+	e.init()
 
 	for _, o := range options {
 		if err := o.apply(e); err != nil {
@@ -101,23 +94,36 @@ func (e *Engine) launch(h Hook) {
 	}()
 }
 
-func (e *Engine) onContextNotification() {
+// init configures default parameters for engine.
+func (e *Engine) init() {
 
-	<-e.parent.Done()
-
-	e.interrupted = true
-
-	if e.beforeShutdown != nil {
-		e.beforeShutdown()
+	if e.parent == nil {
+		e.parent = context.Background()
 	}
 
-	e.cancel()
+	if e.ctx == nil || e.cancel == nil {
+		e.ctx, e.cancel = context.WithCancel(context.Background())
+	}
+
+	if e.timeout == 0 {
+		e.timeout = DefaultTimeout
+	}
+
+	if len(e.signals) == 0 {
+		e.signals = Signals
+	}
+
+	if e.interrupt == nil {
+		e.interrupt = make(chan os.Signal, 1)
+	}
 
 }
 
 // Start will launch the engine and start registered hooks.
 // It will block until every hooks has shutdown, gracefully or with force...
 func (e *Engine) Start() {
+
+	e.init()
 
 	go e.waitShutdownNotification()
 
