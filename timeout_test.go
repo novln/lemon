@@ -27,6 +27,27 @@ func TestTimeoutOption(t *testing.T) {
 
 }
 
+func TestTimeoutOptionWithErr(t *testing.T) {
+
+	timeout := -10 * time.Millisecond
+
+	e, err := New(Timeout(timeout))
+	if err == nil {
+		t.Fatal("An error was expected")
+	}
+
+	if err != ErrTimeout {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+
+	if e != nil {
+		t.Fatal("Engine should be nil")
+	}
+
+	t.Log("Engine's configuration can't have a negative timeout.")
+
+}
+
 type tBlockingStartHook struct {
 	stop bool
 }
