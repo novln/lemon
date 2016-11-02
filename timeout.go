@@ -11,6 +11,7 @@ const (
 )
 
 var (
+	// ErrTimeout is returned when given timeout is negative or equal zero.
 	ErrTimeout = errors.New("invalid timeout: must be positive and not equal zero")
 )
 
