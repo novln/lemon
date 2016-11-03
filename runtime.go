@@ -2,6 +2,7 @@ package lemon
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -25,12 +26,22 @@ type HookRuntime struct {
 
 func (hr *HookRuntime) start(h Hook) {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				hr.c1 <- fmt.Errorf("lemon startup failed: %s", err)
+			}
+		}()
 		hr.c1 <- h.Start()
 	}()
 }
 
 func (hr *HookRuntime) stop(h Hook) {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				hr.c0 <- fmt.Errorf("lemon shutdown failed: %s", err)
+			}
+		}()
 		hr.c0 <- h.Stop()
 	}()
 }
