@@ -29,6 +29,36 @@ func (t *testHook) Stop() error {
 	return t.stopError
 }
 
+type panicHook struct {
+	kill         chan struct{}
+	stopCalled   bool
+	startCalled  bool
+	panicOnStart bool
+	panicOnStop  bool
+}
+
+func (p *panicHook) Start() error {
+	p.startCalled = true
+	if p.panicOnStart {
+		panic("Hook has a crashed: 0xDEADC0DE")
+	}
+	if p.kill != nil {
+		<-p.kill
+	}
+	return nil
+}
+
+func (p *panicHook) Stop() error {
+	p.stopCalled = true
+	if p.panicOnStop {
+		panic("Hook has a crashed: 0xDEADC0DE")
+	}
+	if p.kill != nil {
+		p.kill <- struct{}{}
+	}
+	return nil
+}
+
 func inDelta(t *testing.T, actual, expected time.Duration, message string) {
 	if actual > expected {
 		t.Fatalf("%s: %s", message, actual)
