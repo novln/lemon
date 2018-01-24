@@ -6,6 +6,6 @@
 // The engine will start every registered hook (or daemon, service, etc...) and block until it receives
 // a signal (SIGINT, SIGTERM and SIGQUIT for example) or when the parent context is terminated.
 //
-// Start and Stop will be executed in separated goroutine, so be very carreful with any race conditions or deadlocks.
+// Start and Stop will be executed in separated goroutine, so be very careful with any race conditions or deadlocks.
 //
 package lemon
