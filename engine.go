@@ -77,7 +77,8 @@ func (e *Engine) launch(h Hook) {
 		// Wait for an event to notify this goroutine that a shutdown is required.
 		// It could either be from engine's context or during Hook startup if an error has occurred.
 		// NOTE: If HookRuntime returns an error, we have to shutdown every Hook...
-		if err := runtime.WaitForEvent(e.ctx, h); err != nil {
+		err := runtime.WaitForEvent(e.ctx, h)
+		if err != nil {
 			e.mutex.Lock()
 			e.log(err)
 			e.cancel()

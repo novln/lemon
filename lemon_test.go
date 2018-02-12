@@ -1,6 +1,7 @@
 package lemon
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -13,7 +14,7 @@ type testHook struct {
 	stopError   error
 }
 
-func (t *testHook) Start() error {
+func (t *testHook) Start(ctx context.Context) error {
 	if t.kill != nil {
 		<-t.kill
 	}
@@ -21,7 +22,7 @@ func (t *testHook) Start() error {
 	return t.startError
 }
 
-func (t *testHook) Stop() error {
+func (t *testHook) Stop(ctx context.Context) error {
 	if t.kill != nil {
 		t.kill <- struct{}{}
 	}
@@ -37,7 +38,7 @@ type panicHook struct {
 	panicOnStop  bool
 }
 
-func (p *panicHook) Start() error {
+func (p *panicHook) Start(ctx context.Context) error {
 	p.startCalled = true
 	if p.panicOnStart {
 		panic("Hook has a crashed: 0xDEADC0DE")
@@ -48,7 +49,7 @@ func (p *panicHook) Start() error {
 	return nil
 }
 
-func (p *panicHook) Stop() error {
+func (p *panicHook) Stop(ctx context.Context) error {
 	p.stopCalled = true
 	if p.panicOnStop {
 		panic("Hook has a crashed: 0xDEADC0DE")

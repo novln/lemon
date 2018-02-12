@@ -52,14 +52,14 @@ type tBlockingStartHook struct {
 	stop bool
 }
 
-func (t *tBlockingStartHook) Start() error {
+func (t *tBlockingStartHook) Start(ctx context.Context) error {
 	for !t.stop {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
 }
 
-func (t *tBlockingStartHook) Stop() error {
+func (t *tBlockingStartHook) Stop(ctx context.Context) error {
 	return nil
 }
 
@@ -120,12 +120,12 @@ type tBlockingStopHook struct {
 	kill chan struct{}
 }
 
-func (t *tBlockingStopHook) Start() error {
+func (t *tBlockingStopHook) Start(ctx context.Context) error {
 	<-t.kill
 	return nil
 }
 
-func (t *tBlockingStopHook) Stop() error {
+func (t *tBlockingStopHook) Stop(ctx context.Context) error {
 	// t.kill should be nil
 	t.kill <- struct{}{}
 	return nil

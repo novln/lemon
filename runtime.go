@@ -24,25 +24,27 @@ type HookRuntime struct {
 	w1 bool
 }
 
-func (hr *HookRuntime) start(h Hook) {
+func (hr *HookRuntime) start(ctx context.Context, h Hook) {
 	go func() {
 		defer func() {
-			if err := recover(); err != nil {
+			err := recover()
+			if err != nil {
 				hr.c1 <- fmt.Errorf("lemon startup failed: %s", err)
 			}
 		}()
-		hr.c1 <- h.Start()
+		hr.c1 <- h.Start(ctx)
 	}()
 }
 
-func (hr *HookRuntime) stop(h Hook) {
+func (hr *HookRuntime) stop(ctx context.Context, h Hook) {
 	go func() {
 		defer func() {
-			if err := recover(); err != nil {
+			err := recover()
+			if err != nil {
 				hr.c0 <- fmt.Errorf("lemon shutdown failed: %s", err)
 			}
 		}()
-		hr.c0 <- h.Stop()
+		hr.c0 <- h.Stop(ctx)
 	}()
 }
 
@@ -66,13 +68,13 @@ func (hr *HookRuntime) init() {
 func (hr *HookRuntime) WaitForEvent(ctx context.Context, h Hook) error {
 
 	hr.init()
-	hr.start(h)
+	hr.start(ctx, h)
 
 	// Either context was cancelled, or an error has occurred during Hook startup.
 	select {
 	case <-ctx.Done():
 		// Engine's context was cancelled.
-		hr.stop(h)
+		hr.stop(ctx, h)
 		return nil
 	case err := <-hr.c1:
 
