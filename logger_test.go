@@ -7,61 +7,63 @@ import (
 	"time"
 )
 
-func TestLoggerErrOnStart(t *testing.T) {
+func TestLogger(t *testing.T) {
+	tests := map[string]TestHandler{
+		"ErrOnStart": ErrOnStart,
+		"ErrOnStop":  ErrOnStop,
+	}
+
+	for name, handler := range tests {
+		t.Run(name, Setup(handler))
+	}
+}
+
+func ErrOnStart(runtime *TestRuntime) {
+	defer runtime.Done()
 
 	failures := []error{}
 	handler := func(err error) {
 		failures = append(failures, err)
 	}
 
-	e, err := New(context.Background(), Logger(handler))
+	engine, err := New(context.Background(), Logger(handler))
 	if err != nil {
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+		return
 	}
 
-	h := &testHook{}
-	h.startError = errors.New("An error has occurred: foobar")
+	hook := &testHook{}
+	hook.startError = errors.New("An error has occurred: foobar")
 
-	e.Register(h)
+	engine.Register(hook)
 
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		if err = e.Start(); err == nil {
-			t.Error("An error was expected")
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if err != h.startError {
-			t.Fatalf("Unexpected failure: %+v", err)
-		}
-
-		if len(failures) != 1 {
-			t.Fatalf("Unexpected failures: %+v", failures)
-		}
-
-		if failures[0] != h.startError {
-			t.Fatalf("Unexpected failure: %+v", failures[0])
-		}
-
-		t.Logf("Logger has received an error while engine was trying to manage a hook.")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(600 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
+	err = engine.Start()
+	if err == nil {
+		runtime.Error("An error was expected")
+		return
 	}
+
+	if err != hook.startError {
+		runtime.Error("Unexpected failure: %+v", err)
+		return
+	}
+
+	if len(failures) != 1 {
+		runtime.Error("Unexpected failures: %+v", failures)
+		return
+	}
+
+	if failures[0] != hook.startError {
+		runtime.Error("Unexpected failure: %+v", failures[0])
+		return
+	}
+
+	runtime.Log("Logger has received an error while engine was trying to manage a hook.")
 
 }
 
-func TestLoggerErrOnStop(t *testing.T) {
+func ErrOnStop(runtime *TestRuntime) {
+	defer runtime.Done()
 
 	failures := []error{}
 	handler := func(err error) {
@@ -69,53 +71,42 @@ func TestLoggerErrOnStop(t *testing.T) {
 	}
 
 	kill := 20 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), kill)
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
 
-	e, err := New(ctx, Logger(handler))
+	engine, err := New(ctx, Logger(handler))
 	if err != nil {
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+		return
 	}
 
-	h := &testHook{}
-	h.kill = make(chan struct{}, 1)
-	h.stopError = errors.New("An error has occurred: foobar")
+	hook := &testHook{}
+	hook.kill = make(chan struct{}, 1)
+	hook.stopError = errors.New("An error has occurred: foobar")
 
-	e.Register(h)
+	engine.Register(hook)
 
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if len(failures) != 1 {
-			t.Fatalf("Unexpected failures: %+v", failures)
-		}
-
-		if failures[0] != h.stopError {
-			t.Fatalf("Unexpected failure: %+v", failures[0])
-		}
-
-		t.Logf("Logger has received an error while engine was trying to manage a hook.")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(600 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+		return
 	}
 
-	cancel()
+	if len(failures) != 1 {
+		runtime.Error("Unexpected failures: %+v", failures)
+		return
+	}
+
+	if failures[0] != hook.stopError {
+		runtime.Error("Unexpected failure: %+v", failures[0])
+		return
+	}
+
+	runtime.Log("Logger has received an error while engine was trying to manage a hook.")
+
 }
 
+// TODO Move to v2
 func TestLoggerErrOnStartAndStop(t *testing.T) {
 
 	failures := []error{}

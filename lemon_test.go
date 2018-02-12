@@ -93,3 +93,50 @@ func hasStopped(t *testing.T, h *testHook, id string) {
 		t.Fatalf("Hook %s should have been stopped.", id)
 	}
 }
+
+// A TestHandler is a test case.
+type TestHandler func(*TestRuntime)
+
+// TestRuntime exposes various components for a test case.
+// It's a wrapper used to avoid deadlock and race conditions with go routine and a testing.T instance.
+type TestRuntime struct {
+	ctx  context.Context
+	done chan struct{}
+	test *testing.T
+}
+
+func (r *TestRuntime) Context() context.Context {
+	return r.ctx
+}
+
+func (r *TestRuntime) Error(format string, args ...interface{}) {
+	r.test.Errorf(format, args...)
+}
+
+func (r *TestRuntime) Log(format string, args ...interface{}) {
+	r.test.Logf(format, args...)
+}
+
+func (r *TestRuntime) Done() {
+	r.done <- struct{}{}
+}
+
+// Setup bootstrap a test case.
+func Setup(callback func(*TestRuntime)) func(*testing.T) {
+	return func(t *testing.T) {
+		runtime := &TestRuntime{}
+		runtime.ctx = context.Background()
+		runtime.done = make(chan struct{}, 1)
+		runtime.test = t
+
+		// Execute test in a go routine...
+		go callback(runtime)
+
+		select {
+		case <-runtime.done:
+			t.Log("Engine has stopped.")
+		case <-time.After(600 * time.Millisecond):
+			t.Fatal("Engine should have stopped.")
+		}
+	}
+}
