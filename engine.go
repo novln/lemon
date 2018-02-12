@@ -16,7 +16,8 @@ import (
 //
 // For example:
 //
-//   if e, err := New(); err == nil {
+//   e, err := New(ctx)
+//   if err == nil {
 //       e.Register(&MyService{})
 //       e.Register(&MyWorker{})
 //       e.Start()
@@ -47,17 +48,10 @@ type Engine struct {
 // New creates a new engine with given options.
 //
 // Options can change the timeout, register a signal, execute a pre-hook callback and many other behaviors.
-func New(options ...Option) (*Engine, error) {
-	return NewWithContext(context.Background(), options...)
-}
-
-// NewWithContext creates a new engine with given context and options.
-//
-// Options can change the timeout, register a signal, execute a pre-hook callback and many other behaviors.
-func NewWithContext(parent context.Context, options ...Option) (*Engine, error) {
+func New(ctx context.Context, options ...Option) (*Engine, error) {
 
 	e := &Engine{}
-	e.parent = parent
+	e.parent = ctx
 	e.init()
 
 	for _, o := range options {
@@ -69,6 +63,7 @@ func NewWithContext(parent context.Context, options ...Option) (*Engine, error) 
 	return e, nil
 }
 
+// launch will start given hook.
 func (e *Engine) launch(h Hook) {
 
 	e.wait.Add(1)

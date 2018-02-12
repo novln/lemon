@@ -1,6 +1,7 @@
 package lemon
 
 import (
+	"context"
 	"os"
 	"syscall"
 	"testing"
@@ -9,7 +10,7 @@ import (
 
 func TestAddSignal(t *testing.T) {
 
-	e, err := New(AddSignal(syscall.SIGUSR1), AddSignal(syscall.SIGINT), AddSignal(syscall.SIGUSR2))
+	e, err := New(context.Background(), AddSignal(syscall.SIGUSR1), AddSignal(syscall.SIGINT), AddSignal(syscall.SIGUSR2))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -42,7 +43,7 @@ func TestShutdownWithMultipleSignal(t *testing.T) {
 
 	i := 0
 
-	e, err := New(BeforeShutdown(func() {
+	e, err := New(context.Background(), BeforeShutdown(func() {
 		t.Log("Engine has executed BeforeShutdown hook.")
 		i++
 	}))

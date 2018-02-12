@@ -1,6 +1,7 @@
 package lemon
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
@@ -18,7 +19,7 @@ func TestOptionWithError(t *testing.T) {
 	i := fmt.Errorf("Cannot update Engine with foo")
 	o := errOption{i}
 
-	_, err := New(o)
+	_, err := New(context.Background(), o)
 
 	if err != i {
 		t.Fatalf("Unexpected error: %s", err)

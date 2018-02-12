@@ -14,7 +14,7 @@ func TestLoggerErrOnStart(t *testing.T) {
 		failures = append(failures, err)
 	}
 
-	e, err := New(Logger(handler))
+	e, err := New(context.Background(), Logger(handler))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -71,7 +71,7 @@ func TestLoggerErrOnStop(t *testing.T) {
 	kill := 20 * time.Millisecond
 	ctx, cancel := context.WithTimeout(context.Background(), kill)
 
-	e, err := NewWithContext(ctx, Logger(handler))
+	e, err := New(ctx, Logger(handler))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -126,7 +126,7 @@ func TestLoggerErrOnStartAndStop(t *testing.T) {
 	kill := 20 * time.Millisecond
 	ctx, cancel := context.WithTimeout(context.Background(), kill)
 
-	e, err := NewWithContext(ctx, Logger(handler))
+	e, err := New(ctx, Logger(handler))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}

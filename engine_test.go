@@ -12,7 +12,7 @@ import (
 func TestShutdownWithSignal(t *testing.T) {
 
 	kill := 200 * time.Millisecond
-	e, err := New()
+	e, err := New(context.Background())
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -78,7 +78,7 @@ func TestShutdownWithCancelContext(t *testing.T) {
 	kill := 500 * time.Millisecond
 	ctx, cancel := context.WithTimeout(context.Background(), kill)
 
-	e, err := NewWithContext(ctx)
+	e, err := New(ctx)
 	if err != nil {
 		cancel()
 		t.Fatalf("An error wasn't expected: %s", err)
@@ -137,7 +137,7 @@ func TestShutdownWithCancelContext(t *testing.T) {
 
 func TestShutdownWithHookError(t *testing.T) {
 
-	e, err := New()
+	e, err := New(context.Background())
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -191,7 +191,7 @@ func TestShutdownWithHookError(t *testing.T) {
 
 func TestShutdownWithHookPanicOnStart(t *testing.T) {
 
-	e, err := New()
+	e, err := New(context.Background())
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -260,7 +260,7 @@ func TestShutdownWithHookPanicOnStart(t *testing.T) {
 func TestShutdownWithHookPanicOnStop(t *testing.T) {
 
 	kill := 200 * time.Millisecond
-	e, err := New(Timeout(kill))
+	e, err := New(context.Background(), Timeout(kill))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}

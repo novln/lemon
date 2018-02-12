@@ -10,7 +10,7 @@ func TestTimeoutOption(t *testing.T) {
 
 	timeout := 10 * time.Millisecond
 
-	e, err := New(Timeout(timeout))
+	e, err := New(context.Background(), Timeout(timeout))
 	if err != nil {
 		t.Fatalf("An error wasn't expected: %s", err)
 	}
@@ -31,7 +31,7 @@ func TestTimeoutOptionWithErr(t *testing.T) {
 
 	timeout := -10 * time.Millisecond
 
-	e, err := New(Timeout(timeout))
+	e, err := New(context.Background(), Timeout(timeout))
 	if err == nil {
 		t.Fatal("An error was expected")
 	}
@@ -71,7 +71,7 @@ func TestTimeoutWithBlockingStart(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), kill)
 
-	e, err := NewWithContext(ctx, Timeout(timeout))
+	e, err := New(ctx, Timeout(timeout))
 	if err != nil {
 		cancel()
 		t.Fatalf("An error wasn't expected: %s", err)
@@ -139,7 +139,7 @@ func TestTimeoutWithBlockingStop(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), kill)
 
-	e, err := NewWithContext(ctx, Timeout(timeout))
+	e, err := New(ctx, Timeout(timeout))
 	if err != nil {
 		cancel()
 		t.Fatalf("An error wasn't expected: %s", err)

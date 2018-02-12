@@ -12,7 +12,7 @@ func TestHookLifecycle(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
 
-	e, err := NewWithContext(ctx)
+	e, err := New(ctx)
 	if err != nil {
 		cancel()
 		t.Fatalf("An error wasn't expected: %s", err)
@@ -64,7 +64,7 @@ func TestBeforeShutdownHookWithCancelContext(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
 
-	e, err := NewWithContext(ctx, BeforeShutdown(func() {
+	e, err := New(ctx, BeforeShutdown(func() {
 		t.Log("Engine has executed BeforeShutdown hook.")
 		before = true
 	}))
@@ -120,7 +120,7 @@ func TestAfterShutdownHookWithCancelContext(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
 
-	e, err := NewWithContext(ctx, AfterShutdown(func() {
+	e, err := New(ctx, AfterShutdown(func() {
 		t.Log("Engine has executed AfterShutdown hook.")
 		after = true
 	}))
@@ -174,7 +174,7 @@ func TestBeforeShutdownHookWithSignal(t *testing.T) {
 
 	var before bool
 
-	e, err := New(BeforeShutdown(func() {
+	e, err := New(context.Background(), BeforeShutdown(func() {
 		t.Log("Engine has executed BeforeShutdown hook.")
 		before = true
 	}))
@@ -231,7 +231,7 @@ func TestAfterShutdownHookWithSignal(t *testing.T) {
 
 	var after bool
 
-	e, err := New(AfterShutdown(func() {
+	e, err := New(context.Background(), AfterShutdown(func() {
 		t.Log("Engine has executed AfterShutdown hook.")
 		after = true
 	}))
