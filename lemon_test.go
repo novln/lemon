@@ -69,40 +69,6 @@ func (p *panicHook) Stop(ctx context.Context) error {
 	return nil
 }
 
-func inDelta(t *testing.T, actual, expected time.Duration, message string) {
-	if actual > expected {
-		t.Fatalf("%s: %s", message, actual)
-	}
-}
-
-func inEpsilon(t *testing.T, actual, expected, epsilon time.Duration, message string) {
-
-	if actual < (expected - epsilon) {
-		t.Fatalf("%s: %s", message, actual)
-	}
-
-	if actual > (expected + epsilon) {
-		t.Fatalf("%s: %s", message, actual)
-	}
-}
-
-func hasACompleteLifecycle(t *testing.T, h *testHook, id string) {
-	hasStarted(t, h, id)
-	hasStopped(t, h, id)
-}
-
-func hasStarted(t *testing.T, h *testHook, id string) {
-	if !h.startCalled {
-		t.Fatalf("Hook %s should have been started.", id)
-	}
-}
-
-func hasStopped(t *testing.T, h *testHook, id string) {
-	if !h.stopCalled {
-		t.Fatalf("Hook %s should have been stopped.", id)
-	}
-}
-
 // A TestHandler is a test case.
 type TestHandler func(*TestRuntime)
 
@@ -128,12 +94,35 @@ func (r *TestRuntime) Log(format string, args ...interface{}) {
 	r.test.Logf(format, args...)
 }
 
+func (r *TestRuntime) InDelta(actual, expected time.Duration, message string) {
+	if actual > expected {
+		r.Error("%s: %s", message, actual)
+	}
+}
+
 func (r *TestRuntime) InEpsilon(actual, expected, epsilon time.Duration, message string) {
 	if actual < (expected - epsilon) {
 		r.Error("%s: %s", message, actual)
 	}
 	if actual > (expected + epsilon) {
 		r.Error("%s: %s", message, actual)
+	}
+}
+
+func (r *TestRuntime) HasLifecycle(h *testHook, id string) {
+	r.HasStarted(h, id)
+	r.HasStopped(h, id)
+}
+
+func (r *TestRuntime) HasStarted(h *testHook, id string) {
+	if !h.startCalled {
+		r.Error("Hook %s should have been started.", id)
+	}
+}
+
+func (r *TestRuntime) HasStopped(h *testHook, id string) {
+	if !h.stopCalled {
+		r.Error("Hook %s should have been stopped.", id)
 	}
 }
 
