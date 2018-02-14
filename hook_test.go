@@ -8,278 +8,222 @@ import (
 	"time"
 )
 
-func TestHookLifecycle(t *testing.T) {
+func TestHook(t *testing.T) {
+	tests := map[string]TestHandler{
+		"Lifecycle":              Lifecycle,
+		"BeforeShutdown/Context": BeforeShutdownHookWithContext,
+		"AfterShutdown/Context":  AfterShutdownHookWithContext,
+		"BeforeShutdown/Signal":  BeforeShutdownHookWithSignal,
+		"AfterShutdown/Signal":   AfterShutdownHookWithContext,
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
+	for name, handler := range tests {
+		t.Run(name, Setup(handler))
+	}
+}
 
-	e, err := New(ctx)
+func Lifecycle(runtime *TestRuntime) {
+
+	kill := 500 * time.Millisecond
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
+
+	engine, err := New(ctx)
 	if err != nil {
-		cancel()
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
-	h := &testHook{}
-	h.kill = make(chan struct{}, 1)
+	hook := &testHook{}
+	hook.kill = make(chan struct{}, 1)
 
-	d := make(chan struct{}, 1)
+	engine.Register(hook)
 
-	e.Register(h)
-
-	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if !h.startCalled {
-			t.Fatal("Engine should have start given Hook")
-		}
-
-		if !h.stopCalled {
-			t.Fatal("Engine should have stop given Hook")
-		}
-
-		t.Log("Engine has started then stopped given Hook")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(600 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	cancel()
+	if !hook.startCalled {
+		runtime.Error("Engine should have start given Hook")
+	}
+
+	if !hook.stopCalled {
+		runtime.Error("Engine should have stop given Hook")
+	}
+
+	runtime.Log("Engine has started then stopped given Hook")
 
 }
 
-func TestBeforeShutdownHookWithCancelContext(t *testing.T) {
+func BeforeShutdownHookWithContext(runtime *TestRuntime) {
 
-	var before bool
+	before := false
 
-	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
+	kill := 500 * time.Millisecond
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
 
-	e, err := New(ctx, BeforeShutdown(func() {
-		t.Log("Engine has executed BeforeShutdown hook.")
+	engine, err := New(ctx, BeforeShutdown(func() {
+		runtime.Log("Engine has executed BeforeShutdown hook.")
+		before = true
+	}))
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
+
+	hook1 := &testHook{}
+	hook1.kill = make(chan struct{}, 1)
+
+	hook2 := &testHook{}
+	hook2.kill = make(chan struct{}, 1)
+
+	engine.Register(hook1)
+	engine.Register(hook2)
+
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+
+	if !before {
+		runtime.Error("Engine should have executed BeforeShutdown hook.")
+	}
+
+	runtime.Log("Engine has executed BeforeShutdown hook.")
+
+}
+
+func AfterShutdownHookWithContext(runtime *TestRuntime) {
+
+	after := false
+
+	kill := 500 * time.Millisecond
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
+
+	engine, err := New(ctx, AfterShutdown(func() {
+		runtime.Log("Engine has executed AfterShutdown hook.")
+		after = true
+	}))
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
+
+	hook1 := &testHook{}
+	hook1.kill = make(chan struct{}, 1)
+
+	hook2 := &testHook{}
+	hook2.kill = make(chan struct{}, 1)
+
+	engine.Register(hook1)
+	engine.Register(hook2)
+
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+
+	if !after {
+		runtime.Error("Engine should have executed AfterShutdown hook.")
+	}
+
+	runtime.Log("Engine has executed AfterShutdown hook.")
+
+}
+
+func BeforeShutdownHookWithSignal(runtime *TestRuntime) {
+
+	before := false
+
+	engine, err := New(runtime.Context(), BeforeShutdown(func() {
+		runtime.Log("Engine has executed BeforeShutdown hook.")
 		before = true
 	}))
 
 	if err != nil {
-		cancel()
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
-	h1 := &testHook{}
-	h1.kill = make(chan struct{}, 1)
+	hook1 := &testHook{}
+	hook1.kill = make(chan struct{}, 1)
 
-	h2 := &testHook{}
-	h2.kill = make(chan struct{}, 1)
+	hook2 := &testHook{}
+	hook2.kill = make(chan struct{}, 1)
 
-	e.Register(h1)
-	e.Register(h2)
+	engine.Register(hook1)
+	engine.Register(hook2)
 
-	d := make(chan struct{}, 1)
-
+	engine.interrupt = make(chan os.Signal, 1)
 	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if !before {
-			t.Fatal("Engine should have executed BeforeShutdown hook.")
-		}
-
-		t.Log("Engine has executed BeforeShutdown hook.")
-
+		time.Sleep(200 * time.Millisecond)
+		engine.interrupt <- syscall.SIGINT
 	}()
 
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(600 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	cancel()
+	if !before {
+		runtime.Error("Engine should have executed BeforeShutdown hook.")
+	}
+
+	runtime.Log("Engine has executed BeforeShutdown hook.")
 
 }
 
-func TestAfterShutdownHookWithCancelContext(t *testing.T) {
+func AfterShutdownHookWithSignal(runtime *TestRuntime) {
 
-	var after bool
+	after := false
 
-	ctx, cancel := context.WithTimeout(context.Background(), (500 * time.Millisecond))
-
-	e, err := New(ctx, AfterShutdown(func() {
-		t.Log("Engine has executed AfterShutdown hook.")
+	engine, err := New(runtime.Context(), AfterShutdown(func() {
+		runtime.Log("Engine has executed AfterShutdown hook.")
 		after = true
 	}))
 
 	if err != nil {
-		cancel()
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
-	h1 := &testHook{}
-	h1.kill = make(chan struct{}, 1)
+	hook1 := &testHook{}
+	hook1.kill = make(chan struct{}, 1)
 
-	h2 := &testHook{}
-	h2.kill = make(chan struct{}, 1)
+	hook2 := &testHook{}
+	hook2.kill = make(chan struct{}, 1)
 
-	e.Register(h1)
-	e.Register(h2)
+	engine.Register(hook1)
+	engine.Register(hook2)
 
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if !after {
-			t.Fatal("Engine should have executed AfterShutdown hook.")
-		}
-
-		t.Log("Engine has executed AfterShutdown hook.")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(600 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
-	}
-
-	cancel()
-
-}
-
-func TestBeforeShutdownHookWithSignal(t *testing.T) {
-
-	var before bool
-
-	e, err := New(context.Background(), BeforeShutdown(func() {
-		t.Log("Engine has executed BeforeShutdown hook.")
-		before = true
-	}))
-
-	if err != nil {
-		t.Fatalf("An error wasn't expected: %s", err)
-	}
-
-	h1 := &testHook{}
-	h1.kill = make(chan struct{}, 1)
-
-	h2 := &testHook{}
-	h2.kill = make(chan struct{}, 1)
-
-	e.interrupt = make(chan os.Signal, 1)
-	e.Register(h1)
-	e.Register(h2)
-
+	engine.interrupt = make(chan os.Signal, 1)
 	go func() {
 		time.Sleep(200 * time.Millisecond)
-		e.interrupt <- syscall.SIGINT
+		engine.interrupt <- syscall.SIGINT
 	}()
 
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if !before {
-			t.Fatal("Engine should have executed BeforeShutdown hook.")
-		}
-
-		t.Log("Engine has executed BeforeShutdown hook.")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(300 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
-	}
-
-}
-
-func TestAfterShutdownHookWithSignal(t *testing.T) {
-
-	var after bool
-
-	e, err := New(context.Background(), AfterShutdown(func() {
-		t.Log("Engine has executed AfterShutdown hook.")
-		after = true
-	}))
-
+	err = engine.Start()
 	if err != nil {
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	h1 := &testHook{}
-	h1.kill = make(chan struct{}, 1)
-
-	h2 := &testHook{}
-	h2.kill = make(chan struct{}, 1)
-
-	e.interrupt = make(chan os.Signal, 1)
-	e.Register(h1)
-	e.Register(h2)
-
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		e.interrupt <- syscall.SIGINT
-	}()
-
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		if !after {
-			t.Fatal("Engine should have executed AfterShutdown hook.")
-		}
-
-		t.Log("Engine has executed AfterShutdown hook.")
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(300 * time.Millisecond):
-		t.Fatal("Engine should have stopped.")
+	if !after {
+		runtime.Error("Engine should have executed AfterShutdown hook.")
 	}
+
+	runtime.Log("Engine has executed AfterShutdown hook.")
 
 }

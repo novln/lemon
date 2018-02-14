@@ -30,6 +30,9 @@ func ErrOnStart(runtime *TestRuntime) {
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
 
 	hook := &testHook{}
 	hook.startError = errors.New("an error has occurred: foobar")
@@ -71,6 +74,9 @@ func ErrOnStop(runtime *TestRuntime) {
 	engine, err := New(ctx, Logger(handler))
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
 	hook := &testHook{}
@@ -114,6 +120,9 @@ func ErrLifecycle(runtime *TestRuntime) {
 	engine, err := New(ctx, Logger(handler))
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
 	// There is a trick with this testHook. Because h.kill is defined, h.startError will only be returned
