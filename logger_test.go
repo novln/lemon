@@ -146,7 +146,7 @@ func LoggerErrLifecycle(runtime *TestRuntime) {
 	}
 
 	if len(failures) > 2 {
-		runtime.Error("Unexpected failures: %+v", failures[2:])
+		runtime.Error("Unexpected failures: %+v", failures)
 	}
 
 	if failures[0] != hook.stopError {
