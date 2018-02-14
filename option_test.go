@@ -1,7 +1,6 @@
 package lemon
 
 import (
-	"context"
 	"errors"
 	"testing"
 )
@@ -31,7 +30,7 @@ func OptionWithError(runtime *TestRuntime) {
 		err: expected,
 	}
 
-	engine, err := New(context.Background(), option)
+	engine, err := New(runtime.Context(), option)
 
 	if err == nil {
 		runtime.Error("An error was expected")

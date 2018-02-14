@@ -47,7 +47,7 @@ func TimeoutErrOption(runtime *TestRuntime) {
 
 	timeout := -10 * time.Millisecond
 
-	engine, err := New(context.Background(), Timeout(timeout))
+	engine, err := New(runtime.Context(), Timeout(timeout))
 	if err == nil {
 		runtime.Error("An error was expected")
 	}

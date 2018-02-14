@@ -46,13 +46,7 @@ func HookLifecycle(runtime *TestRuntime) {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	if !hook.startCalled {
-		runtime.Error("Engine should have start given Hook")
-	}
-
-	if !hook.stopCalled {
-		runtime.Error("Engine should have stop given Hook")
-	}
+	runtime.HasLifecycle(hook, "hook")
 
 	runtime.Log("Engine has started then stopped given Hook")
 

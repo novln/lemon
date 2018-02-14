@@ -26,7 +26,7 @@ func LoggerErrOnStart(runtime *TestRuntime) {
 		failures = append(failures, err)
 	}
 
-	engine, err := New(context.Background(), Logger(handler))
+	engine, err := New(runtime.Context(), Logger(handler))
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
@@ -114,7 +114,7 @@ func LoggerErrLifecycle(runtime *TestRuntime) {
 	}
 
 	kill := 20 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), kill)
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
 	defer cancel()
 
 	engine, err := New(ctx, Logger(handler))

@@ -3,70 +3,62 @@ package lemon
 import (
 	"context"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 )
 
 type testHook struct {
+	mutex        sync.Mutex
 	kill         chan struct{}
 	stopCalled   bool
 	startCalled  bool
+	stopDone     bool
+	startDone    bool
 	startError   error
 	stopError    error
 	startTimeout bool
 	stopTimeout  bool
+	panicOnStart bool
+	panicOnStop  bool
 }
 
 func (t *testHook) Start(ctx context.Context) error {
+	t.mutex.Lock()
+	t.startCalled = true
+	t.mutex.Unlock()
+	if t.panicOnStart {
+		panic("Hook has crashed: 0xDEADC0DE")
+	}
 	for t.startTimeout {
 		time.Sleep(100 * time.Millisecond)
 	}
 	if t.kill != nil {
 		<-t.kill
 	}
-	t.startCalled = true
+	t.mutex.Lock()
+	t.startDone = true
+	t.mutex.Unlock()
 	return t.startError
 }
 
 func (t *testHook) Stop(ctx context.Context) error {
+	t.mutex.Lock()
+	t.stopCalled = true
+	t.mutex.Unlock()
+	if t.panicOnStop {
+		panic("Hook has crashed: 0xDEADC0DE")
+	}
 	for t.stopTimeout {
 		time.Sleep(100 * time.Millisecond)
 	}
 	if t.kill != nil {
 		t.kill <- struct{}{}
 	}
-	t.stopCalled = true
+	t.mutex.Lock()
+	t.stopDone = true
+	t.mutex.Unlock()
 	return t.stopError
-}
-
-type panicHook struct {
-	kill         chan struct{}
-	stopCalled   bool
-	startCalled  bool
-	panicOnStart bool
-	panicOnStop  bool
-}
-
-func (p *panicHook) Start(ctx context.Context) error {
-	p.startCalled = true
-	if p.panicOnStart {
-		panic("Hook has a crashed: 0xDEADC0DE")
-	}
-	if p.kill != nil {
-		<-p.kill
-	}
-	return nil
-}
-
-func (p *panicHook) Stop(ctx context.Context) error {
-	p.stopCalled = true
-	if p.panicOnStop {
-		panic("Hook has a crashed: 0xDEADC0DE")
-	}
-	if p.kill != nil {
-		p.kill <- struct{}{}
-	}
-	return nil
 }
 
 // A TestHandler is a test case.
@@ -115,14 +107,34 @@ func (r *TestRuntime) HasLifecycle(h *testHook, id string) {
 }
 
 func (r *TestRuntime) HasStarted(h *testHook, id string) {
-	if !h.startCalled {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if !h.startCalled || !h.startDone {
 		r.Error("Hook %s should have been started.", id)
 	}
 }
 
 func (r *TestRuntime) HasStopped(h *testHook, id string) {
-	if !h.stopCalled {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if !h.stopCalled || !h.stopDone {
 		r.Error("Hook %s should have been stopped.", id)
+	}
+}
+
+func (r *TestRuntime) HasInvoked(h *testHook, id string) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if !h.startCalled || h.startDone || h.stopCalled || h.stopDone {
+		r.Error("Hook %s should have try to start.", id)
+	}
+}
+
+func (r *TestRuntime) HasKill(h *testHook, id string) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+	if !h.startCalled || !h.stopCalled {
+		r.Error("Hook %s should have try to shutdown.", id)
 	}
 }
 
