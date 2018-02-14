@@ -100,11 +100,10 @@ type TestHandler func(*TestRuntime)
 // TestRuntime exposes various components for a test case.
 // It's a wrapper used to avoid deadlock and race conditions with go routine and a testing.T instance.
 type TestRuntime struct {
-	ctx     context.Context
-	done    chan struct{}
-	failure chan struct{}
-	wait    chan struct{}
-	test    *testing.T
+	ctx  context.Context
+	done chan struct{}
+	wait chan struct{}
+	test *testing.T
 }
 
 func (r *TestRuntime) Context() context.Context {
