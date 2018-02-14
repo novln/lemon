@@ -40,8 +40,8 @@ func AddSignal(signal os.Signal) Option {
 	return wrapOption(func(e *Engine) error {
 
 		// Avoid repeated signal value.
-		for _, s := range e.signals {
-			if s == signal {
+		for i := range e.signals {
+			if e.signals[i] == signal {
 				return nil
 			}
 		}
