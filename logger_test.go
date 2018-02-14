@@ -32,7 +32,7 @@ func ErrOnStart(runtime *TestRuntime) {
 	}
 
 	hook := &testHook{}
-	hook.startError = errors.New("An error has occurred: foobar")
+	hook.startError = errors.New("an error has occurred: foobar")
 
 	engine.Register(hook)
 
@@ -75,7 +75,7 @@ func ErrOnStop(runtime *TestRuntime) {
 
 	hook := &testHook{}
 	hook.kill = make(chan struct{}, 1)
-	hook.stopError = errors.New("An error has occurred: foobar")
+	hook.stopError = errors.New("an error has occurred: foobar")
 
 	engine.Register(hook)
 
@@ -122,8 +122,8 @@ func ErrLifecycle(runtime *TestRuntime) {
 	// along with the stop error.
 	hook := &testHook{}
 	hook.kill = make(chan struct{}, 1)
-	hook.startError = errors.New("An error has occurred: foobar")
-	hook.stopError = errors.New("Cannot stop service: foobar already closed")
+	hook.startError = errors.New("an error has occurred: foobar")
+	hook.stopError = errors.New("cannot stop service: foobar already closed")
 
 	engine.Register(hook)
 

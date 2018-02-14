@@ -2,9 +2,19 @@ package lemon
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 )
+
+func TestOption(t *testing.T) {
+	tests := map[string]TestHandler{
+		"WithError": WithError,
+	}
+
+	for name, handler := range tests {
+		t.Run(name, Setup(handler))
+	}
+}
 
 type errOption struct {
 	err error
@@ -14,21 +24,27 @@ func (o errOption) apply(e *Engine) error {
 	return o.err
 }
 
-func TestOptionWithError(t *testing.T) {
+func WithError(runtime *TestRuntime) {
 
-	i := fmt.Errorf("Cannot update Engine with foo")
-	o := errOption{i}
-
-	_, err := New(context.Background(), o)
-
-	if err != i {
-		t.Fatalf("Unexpected error: %s", err)
+	expected := errors.New("cannot update engine with foobar")
+	option := errOption{
+		err: expected,
 	}
+
+	engine, err := New(context.Background(), option)
 
 	if err == nil {
-		t.Fatal("An error was expected")
+		runtime.Error("An error was expected")
 	}
 
-	t.Logf("We received expected error from New(): %s.", err)
+	if err != expected {
+		runtime.Error("Unexpected error: %s", err)
+	}
+
+	if engine != nil {
+		runtime.Error("Engine should be undefined")
+	}
+
+	runtime.Log("We received expected error: %s.", err)
 
 }
