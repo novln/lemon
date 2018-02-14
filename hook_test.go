@@ -10,11 +10,11 @@ import (
 
 func TestHook(t *testing.T) {
 	tests := map[string]TestHandler{
-		"Lifecycle":              Lifecycle,
-		"BeforeShutdown/Context": BeforeShutdownHookWithContext,
-		"AfterShutdown/Context":  AfterShutdownHookWithContext,
-		"BeforeShutdown/Signal":  BeforeShutdownHookWithSignal,
-		"AfterShutdown/Signal":   AfterShutdownHookWithContext,
+		"Lifecycle":              HookLifecycle,
+		"BeforeShutdown/Context": HookBeforeShutdownWithContext,
+		"AfterShutdown/Context":  HookAfterShutdownWithContext,
+		"BeforeShutdown/Signal":  HookBeforeShutdownWithSignal,
+		"AfterShutdown/Signal":   HookAfterShutdownWithSignal,
 	}
 
 	for name, handler := range tests {
@@ -22,7 +22,7 @@ func TestHook(t *testing.T) {
 	}
 }
 
-func Lifecycle(runtime *TestRuntime) {
+func HookLifecycle(runtime *TestRuntime) {
 
 	kill := 500 * time.Millisecond
 	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
@@ -58,7 +58,7 @@ func Lifecycle(runtime *TestRuntime) {
 
 }
 
-func BeforeShutdownHookWithContext(runtime *TestRuntime) {
+func HookBeforeShutdownWithContext(runtime *TestRuntime) {
 
 	before := false
 
@@ -99,7 +99,7 @@ func BeforeShutdownHookWithContext(runtime *TestRuntime) {
 
 }
 
-func AfterShutdownHookWithContext(runtime *TestRuntime) {
+func HookAfterShutdownWithContext(runtime *TestRuntime) {
 
 	after := false
 
@@ -140,7 +140,7 @@ func AfterShutdownHookWithContext(runtime *TestRuntime) {
 
 }
 
-func BeforeShutdownHookWithSignal(runtime *TestRuntime) {
+func HookBeforeShutdownWithSignal(runtime *TestRuntime) {
 
 	before := false
 
@@ -184,7 +184,7 @@ func BeforeShutdownHookWithSignal(runtime *TestRuntime) {
 
 }
 
-func AfterShutdownHookWithSignal(runtime *TestRuntime) {
+func HookAfterShutdownWithSignal(runtime *TestRuntime) {
 
 	after := false
 

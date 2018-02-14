@@ -6,180 +6,154 @@ import (
 	"time"
 )
 
-func TestTimeoutOption(t *testing.T) {
+func TestTimeout(t *testing.T) {
+	tests := map[string]TestHandler{
+		"OkOption":  TimeoutOkOption,
+		"ErrOption": TimeoutErrOption,
+		"Start":     TimeoutStart,
+		"Stop":      TimeoutStop,
+	}
+
+	for name, handler := range tests {
+		t.Run(name, Setup(handler))
+	}
+}
+
+func TimeoutOkOption(runtime *TestRuntime) {
 
 	timeout := 10 * time.Millisecond
 
-	e, err := New(context.Background(), Timeout(timeout))
+	engine, err := New(runtime.Context(), Timeout(timeout))
 	if err != nil {
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
-	if e.Timeout() != timeout {
-		t.Fatalf("Unexpected timeout: %s", e.Timeout())
+	if engine.Timeout() != timeout {
+		runtime.Error("Unexpected timeout: %s", engine.Timeout())
 	}
 
-	if e.timeout != timeout {
-		t.Fatalf("Unexpected timeout: %s", e.timeout)
+	if engine.timeout != timeout {
+		runtime.Error("Unexpected timeout: %s", engine.timeout)
 	}
 
-	t.Log("Engine's configuration has a correct timeout.")
+	runtime.Log("Engine's configuration has a correct timeout.")
 
 }
 
-func TestTimeoutOptionWithErr(t *testing.T) {
+func TimeoutErrOption(runtime *TestRuntime) {
 
 	timeout := -10 * time.Millisecond
 
-	e, err := New(context.Background(), Timeout(timeout))
+	engine, err := New(context.Background(), Timeout(timeout))
 	if err == nil {
-		t.Fatal("An error was expected")
+		runtime.Error("An error was expected")
+	}
+	if engine != nil {
+		runtime.Error("Engine should be undefined")
 	}
 
 	if err != ErrTimeout {
-		t.Fatalf("Unexpected error: %s", err)
+		runtime.Error("Unexpected error: %s", err)
 	}
 
-	if e != nil {
-		t.Fatal("Engine should be nil")
-	}
-
-	t.Log("Engine's configuration can't have a negative timeout.")
+	runtime.Log("Engine's configuration can't have a negative timeout.")
 
 }
 
-type tBlockingStartHook struct {
-	stop bool
-}
-
-func (t *tBlockingStartHook) Start(ctx context.Context) error {
-	for !t.stop {
-		time.Sleep(100 * time.Millisecond)
-	}
-	return nil
-}
-
-func (t *tBlockingStartHook) Stop(ctx context.Context) error {
-	return nil
-}
-
-func TestTimeoutWithBlockingStart(t *testing.T) {
-
-	timeout := 3 * time.Second
-	kill := 500 * time.Millisecond
-	epsilon := 30 * time.Millisecond
-
-	ctx, cancel := context.WithTimeout(context.Background(), kill)
-
-	e, err := New(ctx, Timeout(timeout))
-	if err != nil {
-		cancel()
-		t.Fatalf("An error wasn't expected: %s", err)
-	}
-
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-	e.Register(&tBlockingStartHook{})
-
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		t0 := time.Now()
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
-		}
-
-		delta := time.Since(t0)
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		inEpsilon(t, delta, (timeout + kill), epsilon, "Engine has shutdown with an unexpected amount of time...")
-		t.Logf("Engine has shutdown with a correct timeout: %s.", delta)
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(5 * time.Second):
-		t.Fatal("Engine should have stopped.")
-	}
-
-	cancel()
-}
-
-type tBlockingStopHook struct {
-	kill chan struct{}
-}
-
-func (t *tBlockingStopHook) Start(ctx context.Context) error {
-	<-t.kill
-	return nil
-}
-
-func (t *tBlockingStopHook) Stop(ctx context.Context) error {
-	// t.kill should be nil
-	t.kill <- struct{}{}
-	return nil
-}
-
-func TestTimeoutWithBlockingStop(t *testing.T) {
+func TimeoutStart(runtime *TestRuntime) {
 
 	timeout := 3 * time.Second
 	kill := 500 * time.Millisecond
 	epsilon := 60 * time.Millisecond
+	maximum := kill + timeout
 
-	ctx, cancel := context.WithTimeout(context.Background(), kill)
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
 
-	e, err := New(ctx, Timeout(timeout))
+	engine, err := New(ctx, Timeout(timeout))
 	if err != nil {
-		cancel()
-		t.Fatalf("An error wasn't expected: %s", err)
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
 	}
 
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-	e.Register(&tBlockingStopHook{})
-
-	d := make(chan struct{}, 1)
-
-	go func() {
-
-		t0 := time.Now()
-		if err = e.Start(); err != nil {
-			t.Errorf("An error wasn't expected: %s", err)
+	create := func() *testHook {
+		return &testHook{
+			startTimeout: true,
 		}
-
-		delta := time.Since(t0)
-
-		defer func() {
-			d <- struct{}{}
-		}()
-
-		inEpsilon(t, delta, (timeout + kill), epsilon, "Engine has shutdown with an unexpected amount of time...")
-		t.Logf("Engine has shutdown with a correct timeout: %s.", delta)
-
-	}()
-
-	select {
-	case <-d:
-		t.Log("Engine has stopped.")
-	case <-time.After(10 * time.Second):
-		t.Fatal("Engine should have stopped.")
 	}
 
-	cancel()
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+
+	now := time.Now()
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+
+	delta := time.Since(now)
+
+	runtime.InEpsilon(delta, maximum, epsilon, "Engine has shutdown with an unexpected amount of time...")
+
+	runtime.Log("Engine has shutdown with a correct timeout: %s.", delta)
+
+}
+
+func TimeoutStop(runtime *TestRuntime) {
+
+	timeout := 3 * time.Second
+	kill := 500 * time.Millisecond
+	epsilon := 60 * time.Millisecond
+	maximum := kill + timeout
+
+	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
+	defer cancel()
+
+	engine, err := New(ctx, Timeout(timeout))
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
+
+	create := func() *testHook {
+		return &testHook{
+			kill:        make(chan struct{}),
+			stopTimeout: true,
+		}
+	}
+
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+	engine.Register(create())
+
+	now := time.Now()
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+
+	delta := time.Since(now)
+
+	runtime.InEpsilon(delta, maximum, epsilon, "Engine has shutdown with an unexpected amount of time...")
+
+	runtime.Log("Engine has shutdown with a correct timeout: %s.", delta)
+
 }

@@ -2,19 +2,25 @@ package lemon
 
 import (
 	"context"
+	"runtime"
 	"testing"
 	"time"
 )
 
 type testHook struct {
-	kill        chan struct{}
-	stopCalled  bool
-	startCalled bool
-	startError  error
-	stopError   error
+	kill         chan struct{}
+	stopCalled   bool
+	startCalled  bool
+	startError   error
+	stopError    error
+	startTimeout bool
+	stopTimeout  bool
 }
 
 func (t *testHook) Start(ctx context.Context) error {
+	for t.startTimeout {
+		time.Sleep(100 * time.Millisecond)
+	}
 	if t.kill != nil {
 		<-t.kill
 	}
@@ -23,6 +29,9 @@ func (t *testHook) Start(ctx context.Context) error {
 }
 
 func (t *testHook) Stop(ctx context.Context) error {
+	for t.stopTimeout {
+		time.Sleep(100 * time.Millisecond)
+	}
 	if t.kill != nil {
 		t.kill <- struct{}{}
 	}
@@ -102,7 +111,6 @@ type TestHandler func(*TestRuntime)
 type TestRuntime struct {
 	ctx  context.Context
 	done chan struct{}
-	wait chan struct{}
 	test *testing.T
 }
 
@@ -113,21 +121,29 @@ func (r *TestRuntime) Context() context.Context {
 func (r *TestRuntime) Error(format string, args ...interface{}) {
 	r.test.Errorf(format, args...)
 	r.done <- struct{}{}
-	<-r.wait
+	runtime.Goexit()
 }
 
 func (r *TestRuntime) Log(format string, args ...interface{}) {
 	r.test.Logf(format, args...)
 }
 
+func (r *TestRuntime) InEpsilon(actual, expected, epsilon time.Duration, message string) {
+	if actual < (expected - epsilon) {
+		r.Error("%s: %s", message, actual)
+	}
+	if actual > (expected + epsilon) {
+		r.Error("%s: %s", message, actual)
+	}
+}
+
 // Setup bootstrap a test case.
 func Setup(callback func(*TestRuntime)) func(*testing.T) {
-	return func(t *testing.T) {
+	return func(test *testing.T) {
 		runtime := &TestRuntime{}
 		runtime.ctx = context.Background()
 		runtime.done = make(chan struct{}, 1)
-		runtime.wait = make(chan struct{})
-		runtime.test = t
+		runtime.test = test
 
 		// Execute test in a go routine...
 		go func() {
@@ -137,9 +153,8 @@ func Setup(callback func(*TestRuntime)) func(*testing.T) {
 
 		select {
 		case <-runtime.done:
-			return
-		case <-time.After(600 * time.Millisecond):
-			t.Fatal("Test has timeout.")
+		case <-time.After(10 * time.Second):
+			test.Fatal("Test has timeout.")
 		}
 	}
 }

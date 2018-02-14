@@ -8,7 +8,7 @@ import (
 
 func TestOption(t *testing.T) {
 	tests := map[string]TestHandler{
-		"WithError": WithError,
+		"WithError": OptionWithError,
 	}
 
 	for name, handler := range tests {
@@ -24,7 +24,7 @@ func (o errOption) apply(e *Engine) error {
 	return o.err
 }
 
-func WithError(runtime *TestRuntime) {
+func OptionWithError(runtime *TestRuntime) {
 
 	expected := errors.New("cannot update engine with foobar")
 	option := errOption{

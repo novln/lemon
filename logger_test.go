@@ -9,9 +9,9 @@ import (
 
 func TestLogger(t *testing.T) {
 	tests := map[string]TestHandler{
-		"ErrOnStart":   ErrOnStart,
-		"ErrOnStop":    ErrOnStop,
-		"ErrLifecycle": ErrLifecycle,
+		"ErrOnStart":   LoggerErrOnStart,
+		"ErrOnStop":    LoggerErrOnStop,
+		"ErrLifecycle": LoggerErrLifecycle,
 	}
 
 	for name, handler := range tests {
@@ -19,7 +19,7 @@ func TestLogger(t *testing.T) {
 	}
 }
 
-func ErrOnStart(runtime *TestRuntime) {
+func LoggerErrOnStart(runtime *TestRuntime) {
 
 	failures := []error{}
 	handler := func(err error) {
@@ -60,7 +60,7 @@ func ErrOnStart(runtime *TestRuntime) {
 
 }
 
-func ErrOnStop(runtime *TestRuntime) {
+func LoggerErrOnStop(runtime *TestRuntime) {
 
 	failures := []error{}
 	handler := func(err error) {
@@ -106,7 +106,7 @@ func ErrOnStop(runtime *TestRuntime) {
 
 }
 
-func ErrLifecycle(runtime *TestRuntime) {
+func LoggerErrLifecycle(runtime *TestRuntime) {
 
 	failures := []error{}
 	handler := func(err error) {
