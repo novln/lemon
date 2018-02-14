@@ -100,9 +100,11 @@ type TestHandler func(*TestRuntime)
 // TestRuntime exposes various components for a test case.
 // It's a wrapper used to avoid deadlock and race conditions with go routine and a testing.T instance.
 type TestRuntime struct {
-	ctx  context.Context
-	done chan struct{}
-	test *testing.T
+	ctx     context.Context
+	done    chan struct{}
+	failure chan struct{}
+	wait    chan struct{}
+	test    *testing.T
 }
 
 func (r *TestRuntime) Context() context.Context {
@@ -111,14 +113,12 @@ func (r *TestRuntime) Context() context.Context {
 
 func (r *TestRuntime) Error(format string, args ...interface{}) {
 	r.test.Errorf(format, args...)
+	r.done <- struct{}{}
+	<-r.wait
 }
 
 func (r *TestRuntime) Log(format string, args ...interface{}) {
 	r.test.Logf(format, args...)
-}
-
-func (r *TestRuntime) Done() {
-	r.done <- struct{}{}
 }
 
 // Setup bootstrap a test case.
@@ -127,16 +127,20 @@ func Setup(callback func(*TestRuntime)) func(*testing.T) {
 		runtime := &TestRuntime{}
 		runtime.ctx = context.Background()
 		runtime.done = make(chan struct{}, 1)
+		runtime.wait = make(chan struct{})
 		runtime.test = t
 
 		// Execute test in a go routine...
-		go callback(runtime)
+		go func() {
+			callback(runtime)
+			runtime.done <- struct{}{}
+		}()
 
 		select {
 		case <-runtime.done:
-			t.Log("Engine has stopped.")
+			return
 		case <-time.After(600 * time.Millisecond):
-			t.Fatal("Engine should have stopped.")
+			t.Fatal("Test has timeout.")
 		}
 	}
 }
