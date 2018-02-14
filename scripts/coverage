@@ -14,7 +14,7 @@ cd "${SOURCE_DIRECTORY}/.."
 
 do_analyze() {
 
-    go test -covermode=count -coverprofile .
+    go test -covermode=count -coverprofile=coverage.out .
 
 }
 
