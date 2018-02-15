@@ -3,6 +3,7 @@ package lemon
 import (
 	"context"
 	"os"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -54,7 +55,7 @@ func HookLifecycle(runtime *TestRuntime) {
 
 func HookBeforeShutdownWithContext(runtime *TestRuntime) {
 
-	before := false
+	before := int64(0)
 
 	kill := 500 * time.Millisecond
 	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
@@ -62,7 +63,7 @@ func HookBeforeShutdownWithContext(runtime *TestRuntime) {
 
 	engine, err := New(ctx, BeforeShutdown(func() {
 		runtime.Log("Engine has executed BeforeShutdown hook.")
-		before = true
+		atomic.StoreInt64(&before, 1)
 	}))
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
@@ -85,7 +86,7 @@ func HookBeforeShutdownWithContext(runtime *TestRuntime) {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	if !before {
+	if atomic.LoadInt64(&before) == 0 {
 		runtime.Error("Engine should have executed BeforeShutdown hook.")
 	}
 
@@ -95,7 +96,7 @@ func HookBeforeShutdownWithContext(runtime *TestRuntime) {
 
 func HookAfterShutdownWithContext(runtime *TestRuntime) {
 
-	after := false
+	after := int64(0)
 
 	kill := 500 * time.Millisecond
 	ctx, cancel := context.WithTimeout(runtime.Context(), kill)
@@ -103,7 +104,7 @@ func HookAfterShutdownWithContext(runtime *TestRuntime) {
 
 	engine, err := New(ctx, AfterShutdown(func() {
 		runtime.Log("Engine has executed AfterShutdown hook.")
-		after = true
+		atomic.StoreInt64(&after, 1)
 	}))
 	if err != nil {
 		runtime.Error("An error wasn't expected: %s", err)
@@ -126,7 +127,7 @@ func HookAfterShutdownWithContext(runtime *TestRuntime) {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	if !after {
+	if atomic.LoadInt64(&after) == 0 {
 		runtime.Error("Engine should have executed AfterShutdown hook.")
 	}
 
@@ -136,11 +137,11 @@ func HookAfterShutdownWithContext(runtime *TestRuntime) {
 
 func HookBeforeShutdownWithSignal(runtime *TestRuntime) {
 
-	before := false
+	before := int64(0)
 
 	engine, err := New(runtime.Context(), BeforeShutdown(func() {
 		runtime.Log("Engine has executed BeforeShutdown hook.")
-		before = true
+		atomic.StoreInt64(&before, 1)
 	}))
 
 	if err != nil {
@@ -170,7 +171,7 @@ func HookBeforeShutdownWithSignal(runtime *TestRuntime) {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	if !before {
+	if atomic.LoadInt64(&before) == 0 {
 		runtime.Error("Engine should have executed BeforeShutdown hook.")
 	}
 
@@ -180,11 +181,11 @@ func HookBeforeShutdownWithSignal(runtime *TestRuntime) {
 
 func HookAfterShutdownWithSignal(runtime *TestRuntime) {
 
-	after := false
+	after := int64(0)
 
 	engine, err := New(runtime.Context(), AfterShutdown(func() {
 		runtime.Log("Engine has executed AfterShutdown hook.")
-		after = true
+		atomic.StoreInt64(&after, 1)
 	}))
 
 	if err != nil {
@@ -214,7 +215,7 @@ func HookAfterShutdownWithSignal(runtime *TestRuntime) {
 		runtime.Error("An error wasn't expected: %s", err)
 	}
 
-	if !after {
+	if atomic.LoadInt64(&after) == 0 {
 		runtime.Error("Engine should have executed AfterShutdown hook.")
 	}
 
