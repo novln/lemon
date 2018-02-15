@@ -3,7 +3,6 @@
 [![Documentation][godoc-img]][godoc-url]
 ![License][license-img]
 [![Build Status][travis-img]][travis-url]
-[![Coverage Status][coverage-img]][coverage-url]
 [![Report Status][goreport-img]][goreport-url]
 
 An engine to manage your components lifecycle.
@@ -97,7 +96,5 @@ This is Free Software, released under the [`MIT License`](LICENSE).
 [license-img]: https://img.shields.io/badge/license-MIT-blue.svg
 [travis-url]: https://travis-ci.org/novln/lemon
 [travis-img]: https://travis-ci.org/novln/lemon.svg?branch=master
-[coverage-url]: https://coveralls.io/github/novln/lemon?branch=master
-[coverage-img]: https://coveralls.io/repos/github/novln/lemon/badge.svg?branch=master
 [goreport-url]: https://goreportcard.com/report/novln/lemon
 [goreport-img]: https://goreportcard.com/badge/novln/lemon
