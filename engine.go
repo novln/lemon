@@ -100,12 +100,8 @@ func (e *Engine) launch(h Hook) {
 // init configures default parameters for engine.
 func (e *Engine) init() {
 
-	if e.parent == nil {
-		e.parent = context.Background()
-	}
-
 	if e.ctx == nil || e.cancel == nil {
-		e.ctx, e.cancel = context.WithCancel(context.Background())
+		e.ctx, e.cancel = context.WithCancel(e.parent)
 	}
 
 	if e.timeout == 0 {

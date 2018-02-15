@@ -24,10 +24,6 @@ before_install:
 script:
   - scripts/test
   - scripts/lint
-  - scripts/coverage
-
-after_success:
-  - scripts/coverage --publish
 
 matrix:
   fast_finish: true

@@ -18,19 +18,23 @@ do_analyze() {
 
 }
 
-do_publish() {
+do_view() {
 
-    goveralls -coverprofile=coverage.out -service=travis-ci
+    go tool cover -html=coverage.out
 
 }
 
 
 case "$1" in
-    --publish)
-        do_publish
+    --view)
+        do_view
     ;;
-    --analyze | *)
+    --analyze)
         do_analyze
+    ;;
+    *)
+        do_analyze
+        do_view
     ;;
 esac
 exit 0
