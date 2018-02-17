@@ -99,7 +99,7 @@ This is Free Software, released under the [`MIT License`](LICENSE).
 [license-img]: https://img.shields.io/badge/license-MIT-blue.svg
 [travis-url]: https://travis-ci.org/novln/lemon
 [travis-img]: https://travis-ci.org/novln/lemon.svg?branch=master
-[coverage-url]: https://coveralls.io/github/novln/lemon?branch=master
+[coverage-url]: https://codecov.io/gh/novln/lemon
 [coverage-img]: https://codecov.io/gh/novln/lemon/branch/master/graph/badge.svg
 [goreport-url]: https://goreportcard.com/report/novln/lemon
 [goreport-img]: https://goreportcard.com/badge/novln/lemon
