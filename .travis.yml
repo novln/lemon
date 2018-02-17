@@ -16,14 +16,13 @@ sudo: false
 
 go_import_path: github.com/novln/lemon
 
-before_install:
-  - go get -u github.com/mattn/goveralls
-  - go get -u github.com/alecthomas/gometalinter
-  - gometalinter --install
-
 script:
   - scripts/test
   - scripts/lint
+  - scripts/coverage --analyze
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 
 matrix:
   fast_finish: true
