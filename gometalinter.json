@@ -22,8 +22,6 @@
     "gotype",
     "gotypex",
     "nakedret",
-    "structcheck",
-    "varcheck",
     "gas"
   ],
   "EnableGC": true,
