@@ -33,5 +33,8 @@
   "Test": true,
   "LineLength": 120,
   "Cyclo": 10,
-  "DuplThreshold": 80
+  "DuplThreshold": 80,
+  "Skip": [
+    "examples"
+  ]
 }
