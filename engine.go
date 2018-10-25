@@ -101,6 +101,9 @@ func (e *Engine) launch(h Hook) {
 // init configures default parameters for engine.
 func (e *Engine) init() {
 
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
 	if e.ctx == nil || e.cancel == nil {
 		e.ctx, e.cancel = context.WithCancel(e.parent)
 	}
@@ -142,4 +145,20 @@ func (e *Engine) Start() error {
 
 	return e.cause
 
+}
+
+// Stop will shutdown engine.
+func (e *Engine) Stop() error {
+
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	if e.interrupt != nil {
+		select {
+		case e.interrupt <- os.Interrupt:
+		default:
+		}
+	}
+
+	return nil
 }

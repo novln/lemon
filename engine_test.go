@@ -15,6 +15,7 @@ func TestShutdown(t *testing.T) {
 		"Once":            ShutdownOnce,
 		"Signal":          ShutdownWithSignal,
 		"Context":         ShutdownWithContext,
+		"Stop":            ShutdownWithStop,
 		"ErrHook/Start":   ShutdownWithHookErrorOnStart,
 		"ErrHook/Stop":    ShutdownWithHookErrorOnStop,
 		"PanicHook/Start": ShutdownWithHookPanicOnStart,
@@ -157,6 +158,59 @@ func ShutdownWithContext(runtime *TestRuntime) {
 	engine.Register(hook1)
 	engine.Register(hook2)
 	engine.Register(hook3)
+
+	now := time.Now()
+	err = engine.Start()
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+
+	delta := time.Since(now)
+	latency := delta - kill
+
+	runtime.InDelta(latency, maximum, "Latency between signal and stop is too great")
+	runtime.InEpsilon(delta, kill, epsilon, "Engine shouldn't stopped in this interval")
+
+	runtime.HasLifecycle(hook1, "hook1")
+	runtime.HasLifecycle(hook2, "hook2")
+	runtime.HasLifecycle(hook3, "hook3")
+
+	runtime.Log("Latency: %s", latency)
+
+}
+
+func ShutdownWithStop(runtime *TestRuntime) {
+
+	kill := 200 * time.Millisecond
+	epsilon := 20 * time.Millisecond
+	maximum := 10 * time.Millisecond
+
+	engine, err := New(runtime.Context(), DisableSignal())
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
+
+	create := func() *testHook {
+		return &testHook{
+			kill: make(chan struct{}, 1),
+		}
+	}
+
+	hook1 := create()
+	hook2 := create()
+	hook3 := create()
+
+	engine.Register(hook1)
+	engine.Register(hook2)
+	engine.Register(hook3)
+
+	go func() {
+		time.Sleep(kill)
+		engine.Stop()
+	}()
 
 	now := time.Now()
 	err = engine.Start()
