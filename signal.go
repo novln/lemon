@@ -58,6 +58,7 @@ func AddSignal(signal os.Signal) Option {
 func DisableSignal() Option {
 	return wrapOption(func(e *Engine) error {
 		e.signals = []os.Signal{}
+		e.noSignal = true
 		return nil
 	})
 }

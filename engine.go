@@ -37,6 +37,7 @@ type Engine struct {
 	parent         context.Context
 	ctx            context.Context
 	cancel         context.CancelFunc
+	noSignal       bool
 	signals        []os.Signal
 	beforeShutdown func()
 	afterShutdown  func()
@@ -108,7 +109,7 @@ func (e *Engine) init() {
 		e.timeout = DefaultTimeout
 	}
 
-	if len(e.signals) == 0 {
+	if len(e.signals) == 0 && !e.noSignal {
 		e.signals = Signals
 	}
 
