@@ -7,7 +7,8 @@ import (
 
 func TestSignal(t *testing.T) {
 	tests := map[string]TestHandler{
-		"Option": SignalAddOption,
+		"AddOption":     SignalAddOption,
+		"DisableOption": SignalDisableOption,
 	}
 
 	for name, handler := range tests {
@@ -50,5 +51,25 @@ func SignalAddOption(runtime *TestRuntime) {
 	}
 
 	runtime.Log("Engine's configuration has a correct signal listener.")
+
+}
+
+func SignalDisableOption(runtime *TestRuntime) {
+
+	engine, err := New(runtime.Context(),
+		DisableSignal(),
+	)
+	if err != nil {
+		runtime.Error("An error wasn't expected: %s", err)
+	}
+	if engine == nil {
+		runtime.Error("Engine must be defined")
+	}
+
+	if len(engine.signals) != 0 {
+		runtime.Error("Engine should not listen on any signals")
+	}
+
+	runtime.Log("Engine's configuration do not have signal listener.")
 
 }

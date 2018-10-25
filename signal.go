@@ -23,7 +23,9 @@ func (e *Engine) waitInterrupt() {
 // when the parent context is terminated.
 func (e *Engine) waitShutdownNotification() {
 
-	signal.Notify(e.interrupt, e.signals...)
+	if len(e.signals) > 0 {
+		signal.Notify(e.interrupt, e.signals...)
+	}
 
 	e.waitInterrupt()
 
@@ -49,5 +51,13 @@ func AddSignal(signal os.Signal) Option {
 		e.signals = append(e.signals, signal)
 		return nil
 
+	})
+}
+
+// DisableSignal disables signal handling.
+func DisableSignal() Option {
+	return wrapOption(func(e *Engine) error {
+		e.signals = []os.Signal{}
+		return nil
 	})
 }

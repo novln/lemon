@@ -47,7 +47,7 @@ type Engine struct {
 
 // New creates a new engine with given options.
 //
-// Options can change the timeout, register a signal, execute a pre-hook callback and many other behaviors.
+// Options can change the timeout, register a signal, execute a pre-hook callback and many other behaviours.
 func New(ctx context.Context, options ...Option) (*Engine, error) {
 
 	e := &Engine{}

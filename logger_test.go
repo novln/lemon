@@ -126,7 +126,7 @@ func LoggerErrLifecycle(runtime *TestRuntime) {
 	}
 
 	// There is a trick with this testHook. Because h.kill is defined, h.startError will only be returned
-	// when Stop() is called. So, this error will not be returned (which is the expected behavior)
+	// when Stop() is called. So, this error will not be returned (which is the expected behaviour)
 	// by the engine's Start() method. Nonetheless, this error be forwarded on the error's logger,
 	// along with the stop error.
 	hook := &testHook{}
